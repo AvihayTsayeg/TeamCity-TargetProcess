@@ -17,15 +17,29 @@
 package simoneb.targetprocess;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.intellij.openapi.diagnostic.Logger;
+import jetbrains.buildServer.http.HttpUtil;
 import jetbrains.buildServer.issueTracker.AbstractIssueFetcher;
+import jetbrains.buildServer.issueTracker.BasicIssueFetcherAuthenticator;
 import jetbrains.buildServer.issueTracker.IssueData;
+import jetbrains.buildServer.issueTracker.IssueFetcherAuthenticator;
+import jetbrains.buildServer.issueTracker.errors.ConnectionException;
+import jetbrains.buildServer.issueTracker.errors.IssueTrackerErrorException;
 import jetbrains.buildServer.util.CollectionsUtil;
+import jetbrains.buildServer.util.StringUtil;
 import jetbrains.buildServer.util.cache.EhCacheUtil;
 import org.apache.commons.httpclient.Credentials;
+import org.apache.commons.httpclient.HttpClient;
+import org.apache.commons.httpclient.HttpState;
+import org.apache.commons.httpclient.methods.GetMethod;
+import org.apache.commons.httpclient.params.HttpClientParams;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.io.IOException;
 import java.io.InputStream;
+import java.net.URL;
+import java.net.UnknownHostException;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -36,23 +50,18 @@ import java.util.regex.Pattern;
 public class TargetProcessIssueFetcher extends AbstractIssueFetcher {
 
   private interface Containers {
-    String CONTAINER_FIELDS = "fields";
-    String CONTAINER_LINKS  = "_links";
-    String CONTAINER_HTML   = "html";
+    String ENTITY_STATE   = "EntityState";
+    String ENTITY_TYPE   = "EntityType";
   }
 
   private interface Fields {
-    String FIELD_SUMMARY = "System.Title";
-    String FIELD_STATE   = "System.State";
-    String FIELD_TYPE    = "System.WorkItemType";
-    String FIELD_HREF    = "href";
+    String STATE_NAME    = "Name";
+    String ENTITY_TYPE_NAME    = "Name";
   }
 
-  // host + / collection / area
-  // http://account.visualstudio.com/collection/project
-  private final Pattern p = Pattern.compile("^(http[s]?://.+\\.visualstudio.com)/(.+)/(.+)/$");
-
-  private static final String URL_TEMPLATE_GET_ISSUE = "%s/%s/_apis/wit/workitems/%s?$expand=all&api-version=%s";
+  private static final String URL_TEMPLATE_GET_STORY = "%s/api/%s/UserStories/%s";
+  private static final String URL_TEMPLATE_GET_BUG = "%s/api/%s/Bugs/%s";
+  private final static Logger LOG = Logger.getInstance(TargetProcessIssueFetcher.class.getName());
 
   public TargetProcessIssueFetcher(@NotNull final EhCacheUtil cacheUtil) {
     super(cacheUtil);
@@ -60,55 +69,90 @@ public class TargetProcessIssueFetcher extends AbstractIssueFetcher {
 
   /*
    * see doc:
-   * http://www.visualstudio.com/en-us/integrate/reference/reference-vso-work-item-overview-vsi
-   * http://www.visualstudio.com/en-us/integrate/reference/reference-vso-work-item-work-items-vsi#byids
+   * http://dev.targetprocess.com/rest/getting_started
    */
 
-  private static final String apiVersion = "1.0-preview.2"; // rest api version
+  private static final String apiVersion = "v1"; // rest api version
 
-
-  // host is sanitized in the form "host/collection/project/"
   @NotNull
   public IssueData getIssue(@NotNull final String host, @NotNull final String id, @Nullable final Credentials credentials) throws Exception {
-    final Matcher m = p.matcher(host);
-    if (!m.matches()) {
-      throw new RuntimeException("Wrong host for issue tracker provided: [" + host + "]");
+    String rightUrl;
+
+    try {
+      rightUrl = String.format(URL_TEMPLATE_GET_BUG, host, apiVersion, id);
+      fetchHttpFile(rightUrl, credentials);
+    } catch(IssueTrackerErrorException exception) {
+      rightUrl = String.format(URL_TEMPLATE_GET_STORY, host, apiVersion, id);
+      fetchHttpFile(rightUrl, credentials);
     }
-    final String hostOnly = m.group(1);
-    final String collection = m.group(2);
+
     final String cacheKey = getUrl(host, id);
-    final String restUrl = String.format(URL_TEMPLATE_GET_ISSUE, hostOnly, collection, id, apiVersion);
+    final String finalRightUrl = rightUrl;
+
     return getFromCacheOrFetch(cacheKey, new FetchFunction() {
       @NotNull
       public IssueData fetch() throws Exception {
-        InputStream body = fetchHttpFile(restUrl, credentials);
-        return doGetIssue(body);
+        InputStream body = fetchHttpFile(finalRightUrl, credentials);
+        return doGetIssue(body, finalRightUrl);
       }
     });
   }
 
-  private IssueData doGetIssue(@NotNull final InputStream input) throws Exception {
-    final Map map = new ObjectMapper().readValue(input, Map.class);
-    return parseIssueData(map);
+  @NotNull
+  @Override
+  protected InputStream fetchHttpFile(@NotNull String url, @Nullable Credentials credentials) throws IOException {
+    return getHttpFile(url, new BasicIssueFetcherAuthenticator(credentials));
   }
 
-  private IssueData parseIssueData(@NotNull final Map map) {
-    final Map fields = getContainer(map, Containers.CONTAINER_FIELDS);
-    final Map links = getContainer(map, Containers.CONTAINER_LINKS);
-    final Map html = getContainer(links, Containers.CONTAINER_HTML);
-    final String href = getField(html, Fields.FIELD_HREF);
+  @NotNull
+  protected InputStream getHttpFile(@NotNull String url, @NotNull IssueFetcherAuthenticator authenticator) throws IOException {
+    LOG.debug("Performing HTTP request: \"" + url + "\"");
+
+    URL parsedUrl = new URL(url);
+    HttpClient httpClient = HttpUtil.createHttpClient(120, parsedUrl, authenticator.getCredentials(), authenticator.isBasicAuth());  // 2 minutes
+    if (StringUtil.isEmpty(parsedUrl.getProtocol()) || StringUtil.isEmpty(parsedUrl.getHost())) {
+      throw new UnknownHostException("Failed to parse the host in URL: " + url);
+    }
+
+
+    GetMethod get = new GetMethod(url);
+    authenticator.applyAuthScheme(get);
+    get.setRequestHeader("Accept", "application/json");
+
+    int code = httpClient.executeMethod(get);
+
+    if (code < 200 || code >= 300) {
+      handleHttpError(code, get);
+    }
+
+    LOG.debug("HTTP response: " + code + ", length: " + get.getResponseContentLength());
+    InputStream stream = get.getResponseBodyAsStream();
+    if (stream == null) {
+      throw new ConnectionException("HTTP response is not available from \"" + url + "\"");
+    }
+    return stream;
+  }
+
+  private IssueData doGetIssue(@NotNull final InputStream input, String restUrl) throws Exception {
+    final Map map = new ObjectMapper().readValue(input, Map.class);
+    return parseIssueData(map, restUrl);
+  }
+
+  private IssueData parseIssueData(@NotNull final Map map, String restUrl) {
+    final Map entityState = getContainer(map, Containers.ENTITY_STATE);
+    final Map entityType = getContainer(map, Containers.ENTITY_TYPE);
 
     return new IssueData(
-            String.valueOf(map.get("id")),
+            String.valueOf(map.get("Id")),
             CollectionsUtil.asMap(
-                    IssueData.SUMMARY_FIELD, getField(fields, Fields.FIELD_SUMMARY),
-                    IssueData.STATE_FIELD, getField(fields, Fields.FIELD_STATE),
-                    IssueData.TYPE_FIELD, getField(fields, Fields.FIELD_TYPE),
-                    "href", href
+                    IssueData.SUMMARY_FIELD, String.valueOf(map.get("Name")),
+                    IssueData.STATE_FIELD, getField(entityState, Fields.STATE_NAME),
+                    IssueData.TYPE_FIELD, getField(entityType, Fields.ENTITY_TYPE_NAME),
+                    "href", restUrl
             ),
             false, // todo: state
-            "Feature".equals(getField(fields, Fields.FIELD_TYPE)),
-            href
+            false,
+            restUrl
     );
   }
 
@@ -122,6 +166,6 @@ public class TargetProcessIssueFetcher extends AbstractIssueFetcher {
 
   @NotNull
   public String getUrl(@NotNull String host, @NotNull String id) {
-    return host + "_workitems/edit/" + id;
+    return host + "entity/" + id;
   }
 }

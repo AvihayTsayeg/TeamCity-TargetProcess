@@ -1,24 +1,12 @@
 <%@ include file="/include.jsp"%>
 <%@ taglib prefix="props" tagdir="/WEB-INF/tags/props" %>
 <script type="text/javascript">
-  BS.VsOnlineActions = {
-    prefix: "https://",
-    suffix: ".visualstudio.com",
-
+  BS.TargetProcessActions = {
     onInit: function() {
-      var collection =  $j('#collection').val();
-      if (collection === '') {
-        $j('#collection').val('DefaultCollection');
-      }
       var pattern = $j('#pattern').val();
       if (pattern === '') {
         $j('#pattern').val('#(\\d+)');
       }
-      this.onAccountUpdate();
-    },
-
-    onAccountUpdate: function() {
-      $j('#host').val(this.prefix + $j('#account').val() + this.suffix);
     }
   }
 </script>
@@ -28,7 +16,7 @@
     <c:if test="${showType}">
       <tr>
         <th><label class="shortLabel">Connection Type:</label></th>
-        <td>Visual Studio Online</td>
+        <td>TargetProcess</td>
       </tr>
     </c:if>
     <tr>
@@ -38,12 +26,11 @@
         <span id="error_name" class="error"></span>
       </td>
     </tr>
-    <props:hiddenProperty name="host"/>
     <tr>
-      <th><label for="account" class="shortLabel">Account Name: <l:star/></label></th>
+      <th><label for="host" class="shortLabel">Server URL: <l:star/></label></th>
       <td>
-        <props:textProperty name="account" maxlength="50" onchange="BS.VsOnlineActions.onAccountUpdate();"/>
-        <span class="fieldExplanation" id="explanation_account">{account name}.visualstudio.com</span>
+        <props:textProperty name="host" maxlength="50"/>
+        <span class="fieldExplanation" id="explanation_host">http://{server}/TargetProcess</span>
         <span id="error_account" class="error"></span>
       </td>
     </tr>
@@ -58,25 +45,7 @@
       <th><label for="secure:password" class="shortLabel">Password: <l:star/></label></th>
       <td>
         <props:passwordProperty name="secure:password" maxlength="100"/>
-        <span class="fieldExplanation" id="explanation_secure:password">
-          <a href="http://www.visualstudio.com/en-us/integrate/get-started/get-started-auth-introduction-vsi">Alternate Credentials</a>
-          must be enabled for used account
-        </span>
         <span id="error_secure:password" class="error"></span>
-      </td>
-    </tr>
-    <tr>
-      <th><label for="collection" class="shortLabel">Collection:</label></th>
-      <td>
-        <props:textProperty name="collection" maxlength="100"/>
-        <span id="error_collection" class="error"></span>
-      </td>
-    </tr>
-    <tr>
-      <th><label for="project" class="shortLabel">Project:<l:star/></label></th>
-      <td>
-        <props:textProperty name="project" maxlength="100"/>
-        <span id="error_project" class="error"></span>
       </td>
     </tr>
     <tr>
@@ -91,5 +60,5 @@
 </div>
 
 <script type="text/javascript">
-  BS.VsOnlineActions.onInit();
+  BS.TargetProcessActions.onInit();
 </script>

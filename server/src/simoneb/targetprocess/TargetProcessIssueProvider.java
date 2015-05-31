@@ -63,18 +63,6 @@ public class TargetProcessIssueProvider extends AbstractIssueProvider {
 
   @NotNull
   @Override
-  protected String sanitizeHost(@NotNull String host) {
-    final String hostOnly = super.sanitizeHost(host);
-    String collection = myProperties.get("collection");
-    if (StringUtil.isEmptyOrSpaces(collection)) {
-      collection = "defaultcollection";
-    }
-    final String project = myProperties.get("project");
-    return hostOnly + collection + "/" + project + "/";
-  }
-
-  @NotNull
-  @Override
   public PropertiesProcessor getPropertiesProcessor() {
     final PropertiesProcessor superProcessor = super.getPropertiesProcessor();
     return new PropertiesProcessor() {
@@ -91,8 +79,7 @@ public class TargetProcessIssueProvider extends AbstractIssueProvider {
 
       public Collection<InvalidProperty> process(Map<String, String> properties) {
         final Collection<InvalidProperty> result = superProcessor.process(properties);
-        checkNotEmpty(properties, result, "project", "Project");
-        checkNotEmpty(properties, result, "account", "Account");
+        checkNotEmpty(properties, result, "host", "Server URL");
         checkNotEmpty(properties, result, "username", "Username");
         checkNotEmpty(properties, result, "secure:password", "Password");
         return result;
