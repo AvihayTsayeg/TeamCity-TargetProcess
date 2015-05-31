@@ -1,9 +1,8 @@
 <!DOCTYPE suite SYSTEM "http://testng.org/testng-1.0.dtd">
-<suite name="vsonline tests">
-  <test name="vsonline tests">
+<suite name="targetprocess tests">
+  <test name="targetprocess tests">
     <classes>
-      <class name="SimpleTest"/>
-      <class name="jetbrains.buildServer.vsonline.VsOnlineIssueProviderTest"/>
+      <class name="simoneb.targetprocess.TargetProcessIssueProviderTest"/>
     </classes>
   </test>
 </suite>

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package jetbrains.buildServer.vsonline;
+package simoneb.targetprocess;
 
 import jetbrains.buildServer.issueTracker.IssueData;
 import jetbrains.buildServer.serverSide.ServerPaths;
@@ -29,13 +29,13 @@ import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 /**
- * Class for manual testing of {@code VsOnlineIssueFetcher}
+ * Class for manual testing of {@code TargetProcessIssueFetcher}
  *
  * @author Oleg Rybak <oleg.rybak@jetbrains.com>
  */
-public class VsOnlineIssueFetcherTest extends BaseServerTestCase {
+public class TargetProcessIssueFetcherTest extends BaseServerTestCase {
 
-  private VsOnlineIssueFetcher myFetcher;
+  private TargetProcessIssueFetcher myFetcher;
 
   private Credentials myCredentials;
 
@@ -44,11 +44,11 @@ public class VsOnlineIssueFetcherTest extends BaseServerTestCase {
   @Override
   protected void setUp() throws Exception {
     super.setUp();
-    final String login = System.getProperty("vsonline.test.login");
-    final String password = System.getProperty("vsonline.test.password");
+    final String login = System.getProperty("targetprocess.test.login");
+    final String password = System.getProperty("targetprocess.test.password");
     if (login == null || "".equals(login.trim()) ||
             password == null || "".equals(password.trim())){
-      throw new IllegalStateException("Provide $vsonline.test.login and $vsonline.test.password for tests to work");
+      throw new IllegalStateException("Provide $targetprocess.test.login and $targetprocess.test.password for tests to work");
     }
 
 
@@ -57,7 +57,7 @@ public class VsOnlineIssueFetcherTest extends BaseServerTestCase {
             myServer.getSingletonService(EventDispatcher.class),
             myServer.getSingletonService(ResetCacheRegister.class)
             );
-    myFetcher = new VsOnlineIssueFetcher(util);
+    myFetcher = new TargetProcessIssueFetcher(util);
     myCredentials = new UsernamePasswordCredentials(login, password);
   }
 

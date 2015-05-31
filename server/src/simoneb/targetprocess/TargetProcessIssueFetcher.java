@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package jetbrains.buildServer.vsonline;
+package simoneb.targetprocess;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jetbrains.buildServer.issueTracker.AbstractIssueFetcher;
@@ -33,7 +33,7 @@ import java.util.regex.Pattern;
 /**
  * @author Oleg Rybak <oleg.rybak@jetbrains.com>
  */
-public class VsOnlineIssueFetcher extends AbstractIssueFetcher {
+public class TargetProcessIssueFetcher extends AbstractIssueFetcher {
 
   private interface Containers {
     String CONTAINER_FIELDS = "fields";
@@ -54,7 +54,7 @@ public class VsOnlineIssueFetcher extends AbstractIssueFetcher {
 
   private static final String URL_TEMPLATE_GET_ISSUE = "%s/%s/_apis/wit/workitems/%s?$expand=all&api-version=%s";
 
-  public VsOnlineIssueFetcher(@NotNull final EhCacheUtil cacheUtil) {
+  public TargetProcessIssueFetcher(@NotNull final EhCacheUtil cacheUtil) {
     super(cacheUtil);
   }
 

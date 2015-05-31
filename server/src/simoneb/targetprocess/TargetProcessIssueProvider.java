@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package jetbrains.buildServer.vsonline;
+package simoneb.targetprocess;
 
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.util.text.StringUtil;
@@ -31,17 +31,17 @@ import java.util.regex.Matcher;
 /**
  * @author Oleg Rybak <oleg.rybak@jetbrains.com>
  */
-public class VsOnlineIssueProvider extends AbstractIssueProvider {
+public class TargetProcessIssueProvider extends AbstractIssueProvider {
 
   @NotNull
-  public static final String TYPE = "visualstudioonline";
+  public static final String TYPE = "targetprocess";
 
   @NotNull
-  public static final String DISPLAY_NAME = "VisualStudioOnline";
+  public static final String DISPLAY_NAME = "TargetProcess";
 
-  private static final Logger LOG = Logger.getInstance(VsOnlineIssueProvider.class.getName());
+  private static final Logger LOG = Logger.getInstance(TargetProcessIssueProvider.class.getName());
 
-  public VsOnlineIssueProvider(@NotNull final IssueFetcher fetcher) {
+  public TargetProcessIssueProvider(@NotNull final IssueFetcher fetcher) {
     super(TYPE, fetcher);
   }
 

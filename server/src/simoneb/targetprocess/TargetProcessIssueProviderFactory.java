@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package jetbrains.buildServer.vsonline;
+package simoneb.targetprocess;
 
 import jetbrains.buildServer.issueTracker.*;
 import org.jetbrains.annotations.NotNull;
@@ -22,14 +22,14 @@ import org.jetbrains.annotations.NotNull;
 /**
  * @author Oleg Rybak <oleg.rybak@jetbrains.com>
  */
-public class VsOnlineIssueProviderFactory extends AbstractIssueProviderFactory {
+public class TargetProcessIssueProviderFactory extends AbstractIssueProviderFactory {
 
-  public VsOnlineIssueProviderFactory(@NotNull final IssueFetcher fetcher) {
-    super(fetcher, VsOnlineIssueProvider.TYPE, VsOnlineIssueProvider.DISPLAY_NAME);
+  public TargetProcessIssueProviderFactory(@NotNull final IssueFetcher fetcher) {
+    super(fetcher, TargetProcessIssueProvider.TYPE, TargetProcessIssueProvider.DISPLAY_NAME);
   }
 
   @NotNull
   public IssueProvider createProvider() {
-    return new VsOnlineIssueProvider(myFetcher);
+    return new TargetProcessIssueProvider(myFetcher);
   }
 }

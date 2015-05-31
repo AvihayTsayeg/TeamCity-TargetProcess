@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package jetbrains.buildServer.vsonline;
+package simoneb.targetprocess;
 
 import jetbrains.buildServer.BaseTestCase;
 import jetbrains.buildServer.issueTracker.IssueFetcher;
@@ -30,11 +30,11 @@ import java.util.*;
 /**
  * @author Oleg Rybak <oleg.rybak@jetbrains.com>
  */
-public class VsOnlineIssueProviderTest extends BaseTestCase {
+public class TargetProcessIssueProviderTest extends BaseTestCase {
 
   private Mockery m;
 
-  private VsOnlineIssueProvider myProvider;
+  private TargetProcessIssueProvider myProvider;
 
   @BeforeMethod
   @Override
@@ -42,7 +42,7 @@ public class VsOnlineIssueProviderTest extends BaseTestCase {
     super.setUp();
     m = new Mockery();
     final IssueFetcher fetcher = m.mock(IssueFetcher.class);
-    myProvider = new VsOnlineIssueProvider(fetcher);
+    myProvider = new TargetProcessIssueProvider(fetcher);
   }
 
   @Test
